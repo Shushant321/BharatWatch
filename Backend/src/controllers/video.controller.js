@@ -70,7 +70,7 @@ const uploadVideo = asyncHandler(async (req, res) => {
       owner: req.user?._id || new mongoose.Types.ObjectId(),
       visibility,
       isDraft: isDraft === "true" || isDraft === true,
-      isPublished: !isDraft,
+      isPublished: !(isDraft === "true" || isDraft === true),
     });
 
     return res
@@ -118,6 +118,8 @@ const getAllVideos = asyncHandler(async (req, res) => {
             ],
           },
     });
+
+
 
     pipeline.push({
       $lookup: {
@@ -170,7 +172,6 @@ const getVideoById = asyncHandler(async (req, res) => {
       {
         $match: {
           _id: new mongoose.Types.ObjectId(videoId),
-          isPublished: true,
         },
       },
       {
@@ -408,6 +409,7 @@ const getRecommendedVideos = asyncHandler(async(req , res) => {
           channel: "$owner.fullName",
           channelAvatar: { $substr: ["$owner.fullName", 0, 1] },
           verified: "$owner.verified",
+          owner: 1,
         },
       },
     ]);

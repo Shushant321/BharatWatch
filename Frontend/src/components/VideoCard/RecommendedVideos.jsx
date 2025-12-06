@@ -117,8 +117,9 @@ const RecommendedVideos = ({ videos = [] }) => {
     const fetchVideos = async () => {
       try {
         const response = await api.getAllVideos();
-        if (response.data) {
-          setRealVideos(response.data);
+        if (response && response.data) {
+          setRealVideos(Array.isArray(response.data) ? response.data : []);
+          console.log( "Videos Loaded : ", response.data?.length);
         }
       } catch (error) {
         console.error("Failed to fetch videos:", error);
@@ -139,7 +140,7 @@ const RecommendedVideos = ({ videos = [] }) => {
           ): thum2),
           title: video.title,
           author: video.owner?.fullName || "Unknown",
-          profile: profile1,
+          profile: video.owner?.avatar || null,
           views: `${video.views} Views`,
           time: new Date(video.createdAt).toLocaleDateString(),
         }))
@@ -171,21 +172,48 @@ const RecommendedVideos = ({ videos = [] }) => {
                   {item.title || "Untitled Video"}
                 </div>
                 <div className="yt-rec-metarow">
-                  <img
-                    src={item.profile}
-                    alt={item.author}
-                    className="yt-rec-profile"
-                  />
-                  <span 
-                    className="yt-rec-channel"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate(`/channel/${item.author?.toLowerCase().replace(/\s+/g, '')}`);
-                    }}
-                    style={{cursor: 'pointer'}}
-                  >
-                    {item.author}
-                  </span>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px", flex: 1, minWidth: 0 }}>
+                    {item.profile ? (
+                      <img
+                        src={item.profile}
+                        alt={item.author}
+                        className="yt-rec-profile"
+                        style={{ width: "26px", height: "26px", borderRadius: "50%", objectFit: "cover", flexShrink: 0 }}
+                        onError={(e) => {
+                          e.target.style.display = "none";
+                          e.target.nextElementSibling.style.display = "flex";
+                        }}
+                      />
+                    ) : null}
+                    <div
+                      className="yt-rec-profile-fallback"
+                      style={{
+                        display: item.profile ? "none" : "flex",
+                        width: "26px",
+                        height: "26px",
+                        borderRadius: "50%",
+                        backgroundColor: "#ccc",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: "12px",
+                        fontWeight: "bold",
+                        flexShrink: 0,
+                      }}
+                    >
+                      {item.author?.charAt(0).toUpperCase() || "U"}
+                    </div>
+                    <span 
+                      className="yt-rec-channel"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/channel/${item.author?.toLowerCase().replace(/\s+/g, '')}`);
+                      }}
+                      style={{cursor: 'pointer', minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap"}}
+                      title={item.author}
+                    >
+                      {item.author}
+                    </span>
+                  </div>
                   <span className="yt-rec-dot">•</span>
                   <span>{item.views}</span>
                   <span className="yt-rec-dot">•</span>

@@ -86,6 +86,7 @@ const UploadVideo = () => {
     const file = e.target.files[0];
     if (file && file.type.startsWith("image/")) {
       setVideoDetails((prev) => ({ ...prev, thumbnail: file }));
+      console.log("Thumbnail selected:", file.name);
     }
   };
 
@@ -109,8 +110,11 @@ const UploadVideo = () => {
       formData.append("isDraft", draft ? "true" : "false"); // must be "true"/"false" string
 
       if (uploadType === "video") {
-      if (videoDetails.thumbnail) formData.append("thumbnail", videoDetails.thumbnail);
-      if (videoDetails.category) formData.append("category", videoDetails.category);     
+        if (videoDetails.thumbnail) {
+          formData.append("thumbnail", videoDetails.thumbnail);
+          console.log("Appending thumbnail to FormData");
+        }
+        if (videoDetails.category) formData.append("category", videoDetails.category);
       }
       if (videoDetails.tags) formData.append("tags", videoDetails.tags);
 
@@ -129,7 +133,6 @@ const UploadVideo = () => {
           ? "http://localhost:4000/api/v1/videos/upload"
           : "http://localhost:4000/api/snips/upload";
       
-      // REMOVE Authorization header (no auth needed now)
       const response = await fetch(endpoint, {
         method: "POST",
         body: formData,
@@ -387,6 +390,11 @@ const UploadVideo = () => {
                             onChange={handleThumbnailSelect}
                             className="file-input"
                           />
+                          {videoDetails.thumbnail && (
+                            <div style={{ marginTop: "10px", fontSize: "12px", color: "#666" }}>
+                              ✓ Thumbnail selected: {videoDetails.thumbnail.name}
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}

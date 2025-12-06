@@ -163,7 +163,37 @@ const RightPanelTabs = ({
                       <h4 className="video-rec-title">{video.title}</h4>
                       <div className="video-rec-metadata">
                         <div className="video-rec-channel-row">
-                          <span className="video-rec-channel-pic">
+                          {video.owner?.avatar ? (
+                            <img
+                              src={video.owner.avatar}
+                              alt={video.channel}
+                              className="video-rec-channel-pic"
+                              style={{
+                                width: "24px",
+                                height: "24px",
+                                borderRadius: "50%",
+                                objectFit: "cover",
+                              }}
+                              onError={(e) => {
+                                e.target.style.display = "none";
+                                e.target.nextElementSibling.style.display = "flex";
+                              }}
+                            />
+                          ) : null}
+                          <span
+                            className="video-rec-channel-pic"
+                            style={{
+                              display: video.owner?.avatar ? "none" : "flex",
+                              width: "24px",
+                              height: "24px",
+                              borderRadius: "50%",
+                              backgroundColor: "#ccc",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              fontSize: "12px",
+                              fontWeight: "bold",
+                            }}
+                          >
                             {video.channelAvatar}
                           </span>
                           <span className="video-rec-channel-name">
