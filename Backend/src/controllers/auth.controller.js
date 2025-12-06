@@ -1,10 +1,15 @@
 import { User } from "../models/user.model.js";
 import axios from "axios";   
+import { sendEmail } from "../utils/sendEmail.js";
 import { getAccessAndRefreshTokens } from "../utils/generateTokens.js";
 
 const validateEmail = (email) =>
   /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
+const generateEmailCode = () => {
+  // 7 digit code (1000000 - 9999999)
+  return Math.floor(1000000 + Math.random() * 9000000).toString();
+};
 
 
 //ZOHO AUTH CONTROLLER
@@ -88,6 +93,7 @@ export const registerUser = async (req, res, next) => {
   try {
     const { fullName, email, password, confirmPassword } = req.body;
 
+    // validations same as pehle
     if (!fullName || !email || !password || !confirmPassword) {
       return res.status(400).json({ message: "All fields are required" });
     }
@@ -97,9 +103,7 @@ export const registerUser = async (req, res, next) => {
     }
 
     if (password !== confirmPassword) {
-      return res
-        .status(400)
-        .json({ message: "Passwords do not match" });
+      return res.status(400).json({ message: "Passwords do not match" });
     }
 
     if (password.length < 8) {
@@ -117,41 +121,93 @@ export const registerUser = async (req, res, next) => {
 
     const username = email.split("@")[0];
 
+    const code = generateEmailCode();
+    const expires = new Date(Date.now() + 15 * 60 * 1000); // 15 min
+
     const user = await User.create({
       fullName,
       email,
       password,
       username,
+      isEmailverified: false,
+      emailVerificationCode: code,
+      emailVerificationCodeExpires: expires,
     });
 
-    const { accessToken, refreshToken } =
-      await getAccessAndRefreshTokens(user);
+    // yahan mail bhejo
+    await sendEmail(
+      email,
+      "Verify your BharatWatch account",
+      `Hi ${fullName || username},
 
-    const isProd = process.env.NODE_ENV === "production";
+Your BharatWatch verification code is: ${code}
 
-    res
-      .cookie("refreshToken", refreshToken, {
-        httpOnly: true,
-        secure: isProd,
-        sameSite: isProd ? "none" : "lax",
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-      })
-      .status(201)
-      .json({
-        user: {
-          id: user._id,
-          fullName: user.fullName,
-          email: user.email,
-          username: user.username,
-          avatar: user.avatar,
-          isEmailverified: user.isEmailverified,
-        },
-        accessToken,
-      });
+This code will expire in 15 minutes.
+
+If you did not sign up, please ignore this email.`
+    );
+
+    // yahan pe chahe to login mat karao, sirf message:
+    return res.status(201).json({
+      message: "User created. Please verify your email with the code sent.",
+    });
+
+    // agar tujhe turant accessToken bhi dena hai to upar ki return hata ke
+    // pehle jaisa token generate kar sakta hai, lekin usually verification se pehle login nahi karwate.
   } catch (err) {
     next(err);
   }
 };
+
+
+export const verifyEmail = async (req, res, next) => {
+  try {
+    const { email, code } = req.body;
+
+    if (!email || !code) {
+      return res
+        .status(400)
+        .json({ message: "Email and code are required" });
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(400).json({ message: "User not found" });
+    }
+
+    if (user.isEmailverified) {
+      return res
+        .status(200)
+        .json({ message: "Email already verified" });
+    }
+
+    if (
+      !user.emailVerificationCode ||
+      user.emailVerificationCode !== code
+    ) {
+      return res.status(400).json({ message: "Invalid verification code" });
+    }
+
+    if (
+      !user.emailVerificationCodeExpires ||
+      user.emailVerificationCodeExpires < new Date()
+    ) {
+      return res.status(400).json({ message: "Verification code expired" });
+    }
+
+    user.isEmailverified = true;
+    user.emailVerificationCode = null;
+    user.emailVerificationCodeExpires = null;
+
+    await user.save();
+
+    return res.status(200).json({ message: "Email verified successfully" });
+  } catch (err) {
+    next(err);
+  }
+};
+
 
 // LOGIN
 export const loginUser = async (req, res, next) => {

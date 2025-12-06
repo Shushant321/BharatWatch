@@ -63,23 +63,20 @@ export const api = {
 
   // SIGNUP
   register: async ({ fullName, email, password, confirmpassword }) => {
-    const data = await request("/api/auth/register", {
-      method: "POST",
-      body: JSON.stringify({
-        fullName,
-        email,
-        password,
-        confirmPassword: confirmpassword,
-      }),
-    });
+  const data = await request("/api/auth/register", {
+    method: "POST",
+    body: JSON.stringify({
+      fullName,
+      email,
+      password,
+      confirmPassword: confirmpassword,
+    }),
+  });
 
-    if (data.accessToken) {
-      saveAccessToken(data.accessToken);
-      saveUser(data.user);
-      return { success: true, user: data.user };
-    }
-    return { success: false, message: data.message || "Signup failed" };
-  },
+  // backend ab sirf message bhej raha hai; error na aaye to success true
+  return { success: true, message: data.message };
+},
+
 
   // GOOGLE LOGIN
   googleLogin: async ({ email, fullName, avatar, googleId }) => {
@@ -149,4 +146,12 @@ export const api = {
     }
     return { success: false, message: data.message || "Zoho login failed" };
   },
+  verifyEmail: async (email, code) => {
+  const data = await request("/api/auth/verify-email", {
+    method: "POST",
+    body: JSON.stringify({ email, code }),
+  });
+  return data; // { message: "Email verified successfully" ... }
+},
+
 };

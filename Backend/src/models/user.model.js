@@ -16,13 +16,11 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    emailVerificationOtp: {
-      type: String,
-      default: null,
+    emailVerificationCode: {
+      type: String, // 7-digit code string
     },
-    emailOtpExpiry: {
+    emailVerificationCodeExpires: {
       type: Date,
-      default: null,
     },
     email: {
       type: String,

@@ -20,6 +20,7 @@ import MyChannel from "./pages/myChannel/myChannel";
 import UploadVideo from "./pages/Upload/uploadvideo";
 import DraftVideos from "./pages/DraftVideos/DraftVideos";
 import ZohoCallback from "./pages/auth/ZohoCallback";
+import VerifyEmail from "./pages/auth/VerifyEmail";
 
 const App = () => {
   const [darkMode, setDarkMode] = useState(
@@ -77,6 +78,7 @@ const App = () => {
         <Route path="/upload" element={<UploadVideo darkMode={darkMode} setDarkMode={setDarkMode} />} />
         <Route path="/upload/:draftId" element={<UploadVideo darkMode={darkMode} setDarkMode={setDarkMode} />} />
         <Route path="/auth/zoho/callback" element={<ZohoCallback />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/drafts" element={<DraftVideos darkMode={darkMode} setDarkMode={setDarkMode} />} />
       </Routes>
     </Router>
