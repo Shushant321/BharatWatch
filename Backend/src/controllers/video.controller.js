@@ -19,6 +19,8 @@ const uploadVideo = asyncHandler(async (req, res) => {
       visibility = "public",
       isDraft = false,
       videoUrl,
+      tags = [],
+      category = "General",
     } = req.body;
 
     if (!title?.trim() || !description?.trim()) {
@@ -71,6 +73,8 @@ const uploadVideo = asyncHandler(async (req, res) => {
       visibility,
       isDraft: isDraft === "true" || isDraft === true,
       isPublished: !(isDraft === "true" || isDraft === true),
+      tags: Array.isArray(tags)?tags : tags.split(",").map(t => t.trim()),
+      category,
     });
 
     return res
@@ -142,6 +146,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
         views: 1,
         likes: 1,
         owner: 1,
+        category: 1,
         createdAt: 1,
       },
     });

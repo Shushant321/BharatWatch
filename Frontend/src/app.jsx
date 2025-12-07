@@ -26,6 +26,7 @@ const App = () => {
   const [darkMode, setDarkMode] = useState(
     () => localStorage.getItem('darkMode') === 'true'
   );
+  const [selectedCategory , setSelectedCategory] = useState("All");
 
   useEffect(() => {
     document.body.className = darkMode ? 'dark-mode' : '';
@@ -42,8 +43,8 @@ const App = () => {
           <div className="app-container">
             <div className="main-content">
               <Snips />
-              <Categories />
-              <RecommendedVideos />
+              <Categories onCategoryChange={setSelectedCategory} />
+              <RecommendedVideos category={selectedCategory} />
             </div>
           </div>
         } />
@@ -60,8 +61,8 @@ const App = () => {
           <div className="app-container">
             <div className="main-content">
               <Snips />
-              <Categories />
-              <RecommendedVideos />
+              <Categories onCategoryChange={setSelectedCategory} />
+              <RecommendedVideos category={selectedCategory} />
             </div>
           </div>
         } />

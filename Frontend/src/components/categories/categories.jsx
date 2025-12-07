@@ -1,27 +1,27 @@
 import React, { useState } from "react";
 import "./categories.css";
 
-const Categories = () => {
+const Categories = ({ onCategoryChange }) => {
   const [activeCategory, setActiveCategory] = useState("All");
 
   const categories = [
     "All",
-    "Tech",
-    "Sports",
-    "Music",
-    "Movies",
-    "Fashion",
-    "Gaming",
-    "AI",
     "Education",
-    "Travel",
+    "Entertainment",
+    "Music",
+    "Gaming",
     "News",
-    "More",
-    // "Marvel",
-    // "Food",
-    // "Health",
-    // "Science",
+    "Sports",
+    "Technology",
+    "Travel",
   ];
+
+  const handleCategoryClick = (category) => {
+    setActiveCategory(category);
+    if (onCategoryChange) {
+      onCategoryChange(category);
+    }
+  };
 
   return (
     <section className="categories-section">
@@ -32,7 +32,7 @@ const Categories = () => {
             className={`category-btn ${
               activeCategory === category ? "active" : ""
             }`}
-            onClick={() => setActiveCategory(category)}
+            onClick={() => handleCategoryClick(category)}
           >
             {category}
           </button>
