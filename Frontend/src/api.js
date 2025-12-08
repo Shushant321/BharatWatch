@@ -154,4 +154,22 @@ export const api = {
   return data; // { message: "Email verified successfully" ... }
 },
 
+
+searchVideos: async (query, page = 1, limit = 20) => {
+  const params = new URLSearchParams({ query, page, limit });
+  const data = await request(`/api/v1/videos?${params.toString()}`, {
+    method: "GET",
+  });
+  return data; // backend ApiResponse: { data: [videos], message: ... }
+},
+
+searchSuggestions: async (q) => {
+  const params = new URLSearchParams({ q });
+  const data = await request(`/api/v1/videos/search/suggestions?${params}`);
+  return data.suggestions || [];
+},
+
+
+
+
 };

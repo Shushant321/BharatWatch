@@ -18,49 +18,56 @@ import themeLogo from "./theme.png";
 const Navbar = ({ darkMode, setDarkMode }) => {
   const navigate = useNavigate();
   const theme = darkMode ? "dark" : "light";
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [loggedIn, setLoggedIn] = useState(api.isAuthenticated());
   const [userName, setUserName] = useState("User");
   const [userAvatar, setUserAvatar] = useState(null);
   const [showAccountDropdown, setShowAccountDropdown] = useState(false);
-  const [searchInput, setSearchInput] = useState("");
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   const dropdownRef = useRef();
 
- useEffect(() => {
-  if (!api.isAuthenticated()) {
-    setLoggedIn(false);
-    return;
-  }
-
-  const user = api.getUser();
-  if (!user) {
-    setUserName("User");
-    setLoggedIn(true);
-    return;
-  }
-
-  setUserName(user.fullName || user.email || "User");
-  setLoggedIn(true);
-}, []);
-
-useEffect(() => {
-  const fetchUserProfile = async () => {
-    try {
-      const profile = await api.getProfile();
-      if (profile?.data?.avatar) {
-        setUserAvatar(profile.data.avatar);
-      }
-    } catch (error) {
-      console.error("Failed to fetch profile:", error);
+  // auth + basic user name
+  useEffect(() => {
+    if (!api.isAuthenticated()) {
+      setLoggedIn(false);
+      return;
     }
-  };
-  
-  if (loggedIn) {
-    fetchUserProfile();
-  }
-}, [loggedIn]);
 
+    const user = api.getUser();
+    if (!user) {
+      setUserName("User");
+      setLoggedIn(true);
+      return;
+    }
+
+    setUserName(user.fullName || user.email || "User");
+    setLoggedIn(true);
+  }, []);
+
+  // profile avatar
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const profile = await api.getProfile();
+        if (profile?.data?.avatar) {
+          setUserAvatar(profile.data.avatar);
+        }
+      } catch (error) {
+        console.error("Failed to fetch profile:", error);
+      }
+    };
+
+    if (loggedIn) {
+      fetchUserProfile();
+    }
+  }, [loggedIn]);
+
+  // sidebar body scroll lock
   useEffect(() => {
     if (isSidebarOpen) {
       document.body.classList.add("sidebar-open");
@@ -69,6 +76,7 @@ useEffect(() => {
     }
   }, [isSidebarOpen]);
 
+  // close account dropdown on outside click
   useEffect(() => {
     function handleClickOutside(event) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -78,6 +86,29 @@ useEffect(() => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const handleSearch = () => {
+    const query = searchQuery.trim();
+    if (!query) return;
+    navigate(`/search?q=${encodeURIComponent(query)}`);
+  };
+
+  const handleSearchKeyDown = (e) => {
+    if (e.key === "Enter") {
+      handleSearch();
+    }
+  };
+
+  const fetchSuggestions = async (value) => {
+    try {
+      const list = await api.searchSuggestions(value);
+      setSuggestions(list);
+      setShowSuggestions(list.length > 0);
+    } catch {
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+  };
 
   const toggleTheme = () => setDarkMode(!darkMode);
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
@@ -89,14 +120,14 @@ useEffect(() => {
     navigate("/home");
   };
 
+  // voice search hooks into same searchQuery
   const handleSearchResult = (transcript) => {
-    setSearchInput(transcript);
-    console.log("Final search query:", transcript);
+    setSearchQuery(transcript);
+    handleSearch();
   };
 
   const handleInterimResult = (interim) => {
-    setSearchInput(interim);
-    console.log("Interim text:", interim);
+    setSearchQuery(interim);
   };
 
   const isMobile = window.matchMedia("(max-width: 700px)").matches;
@@ -114,6 +145,7 @@ useEffect(() => {
             <div className="line"></div>
             <div className="line"></div>
           </div>
+
           <div className="navbar-logo" onClick={() => navigate("/home")}>
             <img
               src={theme === "dark" ? darklogo : logo}
@@ -121,31 +153,82 @@ useEffect(() => {
               className="logo"
             />
           </div>
+
           <div className="navbar-search">
             <div className="search-box">
               <input
                 type="text"
                 className="search-input"
                 placeholder="Search video, creator..."
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
+                value={searchQuery}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setSearchQuery(value);
+                  if (!value.trim()) {
+                    setSuggestions([]);
+                    setShowSuggestions(false);
+                    return;
+                  }
+                  fetchSuggestions(value);
+                }}
+                onKeyDown={handleSearchKeyDown}
               />
-              <svg
-                className="search-iconn"
-                width="22"
-                height="22"
-                viewBox="0 0 36 36"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M4.39453 1.49146C9.8869 -1.91692 18.3935 0.714399 23.3945 7.36938L23.625 7.68286C27.6391 13.2491 27.9301 19.7848 24.6738 23.7063L34.6201 31.9094C35.458 32.6007 35.5769 33.8409 34.8857 34.679C34.1945 35.5169 32.9553 35.6355 32.1172 34.9446L21.4561 26.1526C15.9768 28.6598 8.19776 25.9582 3.50488 19.7131C-1.49601 13.0581 -1.09759 4.90019 4.39453 1.49146ZM20.0518 9.4436C15.7649 3.73908 9.66635 2.83187 6.75781 4.63696C3.84942 6.44224 2.56097 11.9343 6.84766 17.6389C11.1343 23.3433 17.2319 24.2513 20.1406 22.4465C23.0492 20.6414 24.3387 15.1484 20.0518 9.4436Z"
-                  fill={theme === "dark" ? "#fff" : "black"}
-                />
-              </svg>
+              <button className="search-btn" onClick={handleSearch}>
+                <svg
+                  className="search-iconn"
+                  width="22"
+                  height="22"
+                  viewBox="0 0 36 36"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M4.39453 1.49146C9.8869 -1.91692 18.3935 0.714399 23.3945 7.36938L23.625 7.68286C27.6391 13.2491 27.9301 19.7848 24.6738 23.7063L34.6201 31.9094C35.458 32.6007 35.5769 33.8409 34.8857 34.679C34.1945 35.5169 32.9553 35.6355 32.1172 34.9446L21.4561 26.1526C15.9768 28.6598 8.19776 25.9582 3.50488 19.7131C-1.49601 13.0581 -1.09759 4.90019 4.39453 1.49146ZM20.0518 9.4436C15.7649 3.73908 9.66635 2.83187 6.75781 4.63696C3.84942 6.44224 2.56097 11.9343 6.84766 17.6389C11.1343 23.3433 17.2319 24.2513 20.1406 22.4465C23.0492 20.6414 24.3387 15.1484 20.0518 9.4436Z"
+                    fill={theme === "dark" ? "#fff" : "black"}
+                  />
+                </svg>
+              </button>
+
+              {showSuggestions && suggestions.length > 0 && (
+                <div className="search-suggestions">
+                  {suggestions.map((s, idx) => (
+                    <div
+                      key={idx}
+                      className="search-suggestion-item"
+                      onClick={() => {
+                        setSearchQuery(s);
+                        setShowSuggestions(false);
+                        navigate(`/search?q=${encodeURIComponent(s)}`);
+                      }}
+                    >
+                      <span className="search-icon-small">
+                        <svg
+                          className="search-icon"
+                          width="22"
+                          height="22"
+                          viewBox="0 0 36 36"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M4.39453 1.49146C9.8869 -1.91692 18.3935 0.714399 23.3945 7.36938L23.625 7.68286C27.6391 13.2491 27.9301 19.7848 24.6738 23.7063L34.6201 31.9094C35.458 32.6007 35.5769 33.8409 34.8857 34.679C34.1945 35.5169 32.9553 35.6355 32.1172 34.9446L21.4561 26.1526C15.9768 28.6598 8.19776 25.9582 3.50488 19.7131C-1.49601 13.0581 -1.09759 4.90019 4.39453 1.49146ZM20.0518 9.4436C15.7649 3.73908 9.66635 2.83187 6.75781 4.63696C3.84942 6.44224 2.56097 11.9343 6.84766 17.6389C11.1343 23.3433 17.2319 24.2513 20.1406 22.4465C23.0492 20.6414 24.3387 15.1484 20.0518 9.4436Z"
+                            fill={theme === "dark" ? "#fff" : "black"}
+                          />
+                        </svg>
+                      </span>
+                      <span>{s}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-            <SpeechSynthesis onSearchResult={handleSearchResult} onInterimResult={handleInterimResult} />
+
+            <SpeechSynthesis
+              onSearchResult={handleSearchResult}
+              onInterimResult={handleInterimResult}
+            />
           </div>
+
           <div className="navbar-links">
             {!isMobile && loggedIn && (
               <>
@@ -166,6 +249,7 @@ useEffect(() => {
                     />
                   </svg>
                 </button>
+
                 <button
                   className="navbar-link download-btn"
                   onClick={() => navigate("/upload")}
@@ -179,6 +263,7 @@ useEffect(() => {
                 </button>
               </>
             )}
+
             {!loggedIn ? (
               <>
                 <button
@@ -198,18 +283,37 @@ useEffect(() => {
               <>
                 <div ref={dropdownRef} className="navbar-account-wrapper">
                   <button
-                    onClick={() => setShowAccountDropdown((prev) => !prev)}
+                    onClick={() =>
+                      setShowAccountDropdown((prev) => !prev)
+                    }
                     aria-label="Account options"
                     className="navbar-link account-icon-btn"
                   >
                     {userAvatar ? (
-                      <img 
-                        src={userAvatar} 
-                        alt="Profile" 
-                        style={{ width: "35px", height: "35px", borderRadius: "50%", objectFit: "cover" }}
+                      <img
+                        src={userAvatar}
+                        alt="Profile"
+                        style={{
+                          width: "35px",
+                          height: "35px",
+                          borderRadius: "50%",
+                          objectFit: "cover",
+                        }}
                       />
                     ) : (
-                      <div style={{ width: "35px", height: "35px", borderRadius: "50%", backgroundColor: "#ccc", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", fontWeight: "bold" }}>
+                      <div
+                        style={{
+                          width: "35px",
+                          height: "35px",
+                          borderRadius: "50%",
+                          backgroundColor: "#ccc",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: "16px",
+                          fontWeight: "bold",
+                        }}
+                      >
                         {userName.charAt(0).toUpperCase()}
                       </div>
                     )}
@@ -217,8 +321,10 @@ useEffect(() => {
                   {showAccountDropdown && (
                     <div className="account-dropdown">
                       <div className="account-name">{userName}</div>
-                      <button onClick={() => navigate("/my-channel")}
-                       className="logout-btn">
+                      <button
+                        onClick={() => navigate("/my-channel")}
+                        className="logout-btn"
+                      >
                         My profile
                       </button>
                       <button onClick={handleLogout} className="logout-btn">

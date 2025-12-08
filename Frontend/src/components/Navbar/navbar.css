@@ -14,6 +14,31 @@ body, * {
   top: 0;
   z-index: 1000;
 }
+.search-suggestions {
+  margin-top: 6px;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #f3f2f2;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 20;
+}
+
+.search-suggestion-item {
+  padding: 8px 12px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  cursor: pointer;
+}
+
+.search-suggestion-item:hover {
+  background: rgba(255,255,255,0.08);
+}
 .navbar-container {
   display: flex;
   justify-content: space-between;

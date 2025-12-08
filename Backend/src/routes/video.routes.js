@@ -8,6 +8,8 @@ import {
   getTrendingVideos,
   updateVideo,
   getRecommendedVideos,
+  getSearchSuggestions,
+  // searchVideos,
 } from "../controllers/video.controller.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
@@ -16,6 +18,8 @@ import { uploadLimiter, apiLimiter } from "../middlewares/security.middleware.js
 import { addComment, getComments, likeComment, replyToComment, getReplies, likeReply } from "../controllers/comment.controller.js";
 
 const router = Router();
+
+router.get("/search/suggestions", getSearchSuggestions);
 
 // Video upload
 router.route("/upload").post(
@@ -53,5 +57,9 @@ router.post("/:videoId/watchlater", authMiddleware, addToWatchLater);
 router.get("/", apiLimiter, getAllVideos);
 router.get("/:videoId", apiLimiter, getVideoById);
 router.patch("/:videoId", updateVideo);
+
+// router.get("/search", searchVideos);
+
+
 
 export default router;
