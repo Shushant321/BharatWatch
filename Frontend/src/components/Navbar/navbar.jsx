@@ -21,26 +21,28 @@ const Navbar = ({ darkMode, setDarkMode }) => {
   const [loggedIn, setLoggedIn] = useState(api.isAuthenticated());
   const [userName, setUserName] = useState("User");
   const [showAccountDropdown, setShowAccountDropdown] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   const dropdownRef = useRef();
 
- useEffect(() => {
-  if (!api.isAuthenticated()) {
-    setLoggedIn(false);
-    return;
-  }
+  useEffect(() => {
+    if (!api.isAuthenticated()) {
+      setLoggedIn(false);
+      return;
+    }
 
-  const user = api.getUser();
-  if (!user) {
-    setUserName("User");
+    const user = api.getUser();
+    if (!user) {
+      setUserName("User");
+      setLoggedIn(true);
+      return;
+    }
+
+    setUserName(user.fullName || user.email || "User");
     setLoggedIn(true);
-    return;
-  }
-
-  setUserName(user.fullName || user.email || "User");
-  setLoggedIn(true);
-}, []);
-
+  }, []);
 
   useEffect(() => {
     if (isSidebarOpen) {
@@ -59,6 +61,29 @@ const Navbar = ({ darkMode, setDarkMode }) => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const handleSearch = () => {
+    const query = searchQuery.trim();
+    if (!query) return;
+    navigate(`/search?q=${encodeURIComponent(query)}`);
+  };
+
+  const handleSearchKeyDown = (e) => {
+    if (e.key === "Enter") {
+      handleSearch();
+    }
+  };
+
+  const fetchSuggestions = async (value) => {
+    try {
+      const list = await api.searchSuggestions(value);
+      setSuggestions(list);
+      setShowSuggestions(list.length > 0);
+    } catch {
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+  };
 
   const toggleTheme = () => setDarkMode(!darkMode);
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
@@ -97,20 +122,66 @@ const Navbar = ({ darkMode, setDarkMode }) => {
                 type="text"
                 className="search-input"
                 placeholder="Search video, creator..."
+                value={searchQuery}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setSearchQuery(value);
+                  if (!value.trim()) {
+                    setSuggestions([]);
+                    setShowSuggestions(false);
+                    return;
+                  }
+                  fetchSuggestions(value);
+                }}
+                onKeyDown={handleSearchKeyDown}
               />
-              <svg
-                className="search-iconn"
-                width="22"
-                height="22"
-                viewBox="0 0 36 36"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M4.39453 1.49146C9.8869 -1.91692 18.3935 0.714399 23.3945 7.36938L23.625 7.68286C27.6391 13.2491 27.9301 19.7848 24.6738 23.7063L34.6201 31.9094C35.458 32.6007 35.5769 33.8409 34.8857 34.679C34.1945 35.5169 32.9553 35.6355 32.1172 34.9446L21.4561 26.1526C15.9768 28.6598 8.19776 25.9582 3.50488 19.7131C-1.49601 13.0581 -1.09759 4.90019 4.39453 1.49146ZM20.0518 9.4436C15.7649 3.73908 9.66635 2.83187 6.75781 4.63696C3.84942 6.44224 2.56097 11.9343 6.84766 17.6389C11.1343 23.3433 17.2319 24.2513 20.1406 22.4465C23.0492 20.6414 24.3387 15.1484 20.0518 9.4436Z"
-                  fill={theme === "dark" ? "#fff" : "black"}
-                />
-              </svg>
+              <button className="search-btn" onClick={handleSearch}>
+                <svg
+                  className="search-iconn"
+                  width="22"
+                  height="22"
+                  viewBox="0 0 36 36"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M4.39453 1.49146C9.8869 -1.91692 18.3935 0.714399 23.3945 7.36938L23.625 7.68286C27.6391 13.2491 27.9301 19.7848 24.6738 23.7063L34.6201 31.9094C35.458 32.6007 35.5769 33.8409 34.8857 34.679C34.1945 35.5169 32.9553 35.6355 32.1172 34.9446L21.4561 26.1526C15.9768 28.6598 8.19776 25.9582 3.50488 19.7131C-1.49601 13.0581 -1.09759 4.90019 4.39453 1.49146ZM20.0518 9.4436C15.7649 3.73908 9.66635 2.83187 6.75781 4.63696C3.84942 6.44224 2.56097 11.9343 6.84766 17.6389C11.1343 23.3433 17.2319 24.2513 20.1406 22.4465C23.0492 20.6414 24.3387 15.1484 20.0518 9.4436Z"
+                    fill={theme === "dark" ? "#fff" : "black"}
+                  />
+                </svg>
+              </button>
+              {showSuggestions && suggestions.length > 0 && (
+                <div className="search-suggestions">
+                  {suggestions.map((s, idx) => (
+                    <div
+                      key={idx}
+                      className="search-suggestion-item"
+                      onClick={() => {
+                        setSearchQuery(s);
+                        setShowSuggestions(false);
+                        navigate(`/search?q=${encodeURIComponent(s)}`);
+                      }}
+                    >
+                      <span className="search-icon-small">
+                        <svg
+                          className="search-icon"
+                          width="22"
+                          height="22"
+                          viewBox="0 0 36 36"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M4.39453 1.49146C9.8869 -1.91692 18.3935 0.714399 23.3945 7.36938L23.625 7.68286C27.6391 13.2491 27.9301 19.7848 24.6738 23.7063L34.6201 31.9094C35.458 32.6007 35.5769 33.8409 34.8857 34.679C34.1945 35.5169 32.9553 35.6355 32.1172 34.9446L21.4561 26.1526C15.9768 28.6598 8.19776 25.9582 3.50488 19.7131C-1.49601 13.0581 -1.09759 4.90019 4.39453 1.49146ZM20.0518 9.4436C15.7649 3.73908 9.66635 2.83187 6.75781 4.63696C3.84942 6.44224 2.56097 11.9343 6.84766 17.6389C11.1343 23.3433 17.2319 24.2513 20.1406 22.4465C23.0492 20.6414 24.3387 15.1484 20.0518 9.4436Z"
+                            fill={theme === "dark" ? "#fff" : "black"}
+                          />
+                        </svg>
+                      </span>
+                      <span>{s}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
             <button className="mic-btn" aria-label="Voice Search">
               <svg
@@ -193,8 +264,10 @@ const Navbar = ({ darkMode, setDarkMode }) => {
                   {showAccountDropdown && (
                     <div className="account-dropdown">
                       <div className="account-name">{userName}</div>
-                      <button onClick={() => navigate("/my-channel")}
-                       className="logout-btn">
+                      <button
+                        onClick={() => navigate("/my-channel")}
+                        className="logout-btn"
+                      >
                         My profile
                       </button>
                       <button onClick={handleLogout} className="logout-btn">

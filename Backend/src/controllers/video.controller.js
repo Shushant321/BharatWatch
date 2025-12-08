@@ -89,15 +89,15 @@ const getAllVideos = asyncHandler(async (req, res) => {
     const pipeline = [];
 
     if (query) {
-      pipeline.push({
-        $match: {
-          $or: [
-            { title: { $regex: query, $options: "i" } },
-            { description: { $regex: query, $options: "i" } },
-          ],
-        },
-      });
-    }
+  pipeline.push({
+    $match: {
+      $or: [
+        { title: { $regex: query, $options: "i" } },
+        { description: { $regex: query, $options: "i" } },
+      ],
+    },
+  });
+}
 
     const { drafts = "false" } = req.query;
     const isDraftOnly = drafts === "true";
@@ -156,6 +156,30 @@ const getAllVideos = asyncHandler(async (req, res) => {
     throw new ApiError(500, error.message || "Failed to fetch videos");
   }
 });
+
+// controller me
+export const getSearchSuggestions = asyncHandler(async (req, res) => {
+  const q = (req.query.q || "").trim();
+  if (!q) return res.json({ suggestions: [] });
+
+  const regex = new RegExp(q, "i");
+
+  const videos = await Video.find(
+    {
+      $or: [{ title: regex }, { description: regex }],
+      isPublished: true,
+      visibility: "public",
+    },
+    { title: 1 } // sirf title
+  )
+    .sort({ views: -1 })
+    .limit(5);
+
+  const suggestions = videos.map((v) => v.title);
+
+  res.json({ suggestions });
+});
+
 
 // Get video by ID
 const getVideoById = asyncHandler(async (req, res) => {
