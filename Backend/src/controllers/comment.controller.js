@@ -4,9 +4,11 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import mongoose from "mongoose";
 import { Video } from "../models/video.model.js";
+import { User } from "../models/user.model.js";
 import { commentLike } from "../models/comment_like.model.js";
 import { replyLike } from "../models/reply_like.model.js";
-import { CommentReply } from "../models/comment_reply.model.js"
+import { CommentReply } from "../models/comment_reply.model.js";
+import { createNotification } from "./notification.controller.js";
 
 export const addComment = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
@@ -25,6 +27,15 @@ export const addComment = asyncHandler(async (req, res) => {
   });
 
   await Video.findByIdAndUpdate(videoId, { $inc: { commentsCount: 1 } });
+
+  const video = await Video.findById(videoId);
+  const commenter = await User.findById(testUserId);
+  await createNotification(
+    video.owner,
+    `${commenter?.fullName || "Someone"} commented on your video`,
+    `"${video.title}" has a new comment`,
+    "comment"
+  );
 
   const populatedComment = await comment.populate("owner", "fullName");
 

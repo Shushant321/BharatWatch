@@ -107,6 +107,8 @@ body, * {
   align-items: center;
   font-weight: 500;
   min-height: 25px;
+  flex-wrap: wrap;
+  overflow: hidden;
 }
 
 .yt-rec-profile {
@@ -266,7 +268,8 @@ body, * {
   }
 }
 .yt-rec-dot { color: #C7C8CC; font-size: 1em; }
-.yt-rec-channel { color: #181b28; font-weight: 700; letter-spacing:.018em; }
+.yt-rec-channel { color: #181b28; font-weight: 700; letter-spacing:.018em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 0; }
+.yt-rec-profile-fallback { display: flex !important; }
 
 
 /* Light mode: same as original CSS (doesn't need update if variables not set) */

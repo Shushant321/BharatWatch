@@ -127,8 +127,8 @@ export const api = {
     return getSavedUser();
   },
 
-  getAllVideos: async () => {
-    const data = await request("/api/v1/videos", { method: "GET" });
+  getAllVideos: async (limit = 100) => {
+    const data = await request(`/api/v1/videos?limit=${limit}`, { method: "GET" });
     return data;
   },
 

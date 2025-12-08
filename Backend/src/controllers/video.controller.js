@@ -9,6 +9,7 @@ import fs from "fs";
 import mongoose from "mongoose";
 import { uploadOnCloudinary } from "../utils/uploadoncloudinary.js";
 import { pipeline } from "stream";
+import { createNotification } from "./notification.controller.js";
 
 // Upload video
 const uploadVideo = asyncHandler(async (req, res) => {
@@ -19,6 +20,8 @@ const uploadVideo = asyncHandler(async (req, res) => {
       visibility = "public",
       isDraft = false,
       videoUrl,
+      tags = [],
+      category = "General",
     } = req.body;
 
     if (!title?.trim() || !description?.trim()) {
@@ -70,7 +73,9 @@ const uploadVideo = asyncHandler(async (req, res) => {
       owner: req.user?._id || new mongoose.Types.ObjectId(),
       visibility,
       isDraft: isDraft === "true" || isDraft === true,
-      isPublished: !isDraft,
+      isPublished: !(isDraft === "true" || isDraft === true),
+      tags: Array.isArray(tags)?tags : tags.split(",").map(t => t.trim()),
+      category,
     });
 
     return res
@@ -119,6 +124,8 @@ const getAllVideos = asyncHandler(async (req, res) => {
           },
     });
 
+
+
     pipeline.push({
       $lookup: {
         from: "users",
@@ -140,6 +147,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
         views: 1,
         likes: 1,
         owner: 1,
+        category: 1,
         createdAt: 1,
       },
     });
@@ -194,7 +202,6 @@ const getVideoById = asyncHandler(async (req, res) => {
       {
         $match: {
           _id: new mongoose.Types.ObjectId(videoId),
-          isPublished: true,
         },
       },
       {
@@ -257,6 +264,15 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
         Id: req.user._id,
       });
       await Video.findByIdAndUpdate(videoId, { $inc: { likes: 1 } });
+      
+      const liker = await User.findById(req.user._id);
+      await createNotification(
+        video.owner,
+        `${liker?.fullName || "Someone"} liked your video`,
+        `"${video.title}" received a like`,
+        "like"
+      );
+      
       return res
         .status(200)
         .json(
@@ -432,6 +448,7 @@ const getRecommendedVideos = asyncHandler(async(req , res) => {
           channel: "$owner.fullName",
           channelAvatar: { $substr: ["$owner.fullName", 0, 1] },
           verified: "$owner.verified",
+          owner: 1,
         },
       },
     ]);

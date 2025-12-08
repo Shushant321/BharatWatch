@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../../api.js";
+import SpeechSynthesis from "../SpeechSynthesis/SpeechSynthesis";
 import "./navbar.css";
 import logo from "../../logo.png";
 import darklogo from "../../logodark.png";
@@ -17,16 +18,20 @@ import themeLogo from "./theme.png";
 const Navbar = ({ darkMode, setDarkMode }) => {
   const navigate = useNavigate();
   const theme = darkMode ? "dark" : "light";
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [loggedIn, setLoggedIn] = useState(api.isAuthenticated());
   const [userName, setUserName] = useState("User");
+  const [userAvatar, setUserAvatar] = useState(null);
   const [showAccountDropdown, setShowAccountDropdown] = useState(false);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   const dropdownRef = useRef();
 
+  // auth + basic user name
   useEffect(() => {
     if (!api.isAuthenticated()) {
       setLoggedIn(false);
@@ -44,6 +49,25 @@ const Navbar = ({ darkMode, setDarkMode }) => {
     setLoggedIn(true);
   }, []);
 
+  // profile avatar
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const profile = await api.getProfile();
+        if (profile?.data?.avatar) {
+          setUserAvatar(profile.data.avatar);
+        }
+      } catch (error) {
+        console.error("Failed to fetch profile:", error);
+      }
+    };
+
+    if (loggedIn) {
+      fetchUserProfile();
+    }
+  }, [loggedIn]);
+
+  // sidebar body scroll lock
   useEffect(() => {
     if (isSidebarOpen) {
       document.body.classList.add("sidebar-open");
@@ -52,6 +76,7 @@ const Navbar = ({ darkMode, setDarkMode }) => {
     }
   }, [isSidebarOpen]);
 
+  // close account dropdown on outside click
   useEffect(() => {
     function handleClickOutside(event) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -94,6 +119,17 @@ const Navbar = ({ darkMode, setDarkMode }) => {
     setShowAccountDropdown(false);
     navigate("/home");
   };
+
+  // voice search hooks into same searchQuery
+  const handleSearchResult = (transcript) => {
+    setSearchQuery(transcript);
+    handleSearch();
+  };
+
+  const handleInterimResult = (interim) => {
+    setSearchQuery(interim);
+  };
+
   const isMobile = window.matchMedia("(max-width: 700px)").matches;
 
   return (
@@ -109,6 +145,7 @@ const Navbar = ({ darkMode, setDarkMode }) => {
             <div className="line"></div>
             <div className="line"></div>
           </div>
+
           <div className="navbar-logo" onClick={() => navigate("/home")}>
             <img
               src={theme === "dark" ? darklogo : logo}
@@ -116,6 +153,7 @@ const Navbar = ({ darkMode, setDarkMode }) => {
               className="logo"
             />
           </div>
+
           <div className="navbar-search">
             <div className="search-box">
               <input
@@ -150,6 +188,7 @@ const Navbar = ({ darkMode, setDarkMode }) => {
                   />
                 </svg>
               </button>
+
               {showSuggestions && suggestions.length > 0 && (
                 <div className="search-suggestions">
                   {suggestions.map((s, idx) => (
@@ -183,21 +222,13 @@ const Navbar = ({ darkMode, setDarkMode }) => {
                 </div>
               )}
             </div>
-            <button className="mic-btn" aria-label="Voice Search">
-              <svg
-                width="50"
-                height="50"
-                viewBox="0 0 50 50"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M49.1465 24.0811C50.1389 26.3959 50.2665 28.8224 49.5186 31.1729C48.7705 33.5234 47.1672 35.7354 44.833 37.6367C42.4987 39.5381 39.4956 41.0787 36.0566 42.1387C32.9171 43.1064 29.4904 43.648 26 43.7354V50H24V43.7354C20.5092 43.6481 17.0823 43.1065 13.9424 42.1387C10.5032 41.0786 7.50037 39.5381 5.16602 37.6367C2.83167 35.7353 1.22856 33.5235 0.480469 31.1729C-0.267498 28.8224 -0.140793 26.3959 0.851562 24.0811L11.4482 25.8555C10.8913 27.1546 10.8204 28.5168 11.2402 29.8359C11.6601 31.1548 12.5594 32.396 13.8691 33.4629C15.1791 34.5299 16.865 35.3944 18.7949 35.9893C20.7247 36.584 22.8474 36.8935 24.999 36.8936C27.1508 36.8936 29.2742 36.5841 31.2041 35.9893C33.1339 35.3944 34.819 34.5298 36.1289 33.4629C37.4388 32.396 38.3389 31.1549 38.7588 29.8359C39.1786 28.5168 39.1067 27.1546 38.5498 25.8555L49.1465 24.0811ZM25 0C29.0892 0.000140825 32.7196 2.45505 35 6.25H25V12.5H37.249C37.413 13.5097 37.499 14.5548 37.499 15.625C37.499 16.6952 37.413 17.7403 37.249 18.75H25V25H35C32.7196 28.7949 29.0892 31.2499 25 31.25C18.0966 31.25 12.5 24.2544 12.5 15.625C12.5 6.99557 18.0966 0 25 0Z"
-                  fill={theme === "dark" ? "#fff" : "black"}
-                />
-              </svg>
-            </button>
+
+            <SpeechSynthesis
+              onSearchResult={handleSearchResult}
+              onInterimResult={handleInterimResult}
+            />
           </div>
+
           <div className="navbar-links">
             {!isMobile && loggedIn && (
               <>
@@ -218,6 +249,7 @@ const Navbar = ({ darkMode, setDarkMode }) => {
                     />
                   </svg>
                 </button>
+
                 <button
                   className="navbar-link download-btn"
                   onClick={() => navigate("/upload")}
@@ -231,6 +263,7 @@ const Navbar = ({ darkMode, setDarkMode }) => {
                 </button>
               </>
             )}
+
             {!loggedIn ? (
               <>
                 <button
@@ -250,16 +283,40 @@ const Navbar = ({ darkMode, setDarkMode }) => {
               <>
                 <div ref={dropdownRef} className="navbar-account-wrapper">
                   <button
-                    onClick={() => setShowAccountDropdown((prev) => !prev)}
+                    onClick={() =>
+                      setShowAccountDropdown((prev) => !prev)
+                    }
                     aria-label="Account options"
                     className="navbar-link account-icon-btn"
                   >
-                    <svg width="35" height="35" viewBox="0 0 76 76" fill="none">
-                      <path
-                        d="M38 44.7959C40.6009 44.7959 43.1762 45.1373 45.5791 45.8008C47.982 46.4643 50.1658 47.437 52.0049 48.6631C53.8438 49.8891 55.3026 51.3445 56.2979 52.9463C57.254 54.4852 57.7631 56.1306 57.8018 57.7949C52.7345 62.8639 45.7337 66 38 66C30.266 66 23.2646 62.8642 18.1973 57.7949C18.2359 56.1306 18.746 54.4852 19.7021 52.9463C20.6975 51.3445 22.1562 49.8891 23.9951 48.6631C25.8342 47.437 28.018 46.4643 30.4209 45.8008C32.8238 45.1373 35.3992 44.7959 38 44.7959ZM38 10C53.464 10 66 22.536 66 38C66 43.8461 64.2067 49.2726 61.1426 53.7627C60.8789 53.1225 60.5555 52.4919 60.1729 51.876C58.9668 49.935 57.1991 48.1712 54.9707 46.6855C52.7422 45.1999 50.0963 44.0218 47.1846 43.2178C44.2728 42.4137 41.1517 41.999 38 41.999C34.8483 41.999 31.7272 42.4137 28.8154 43.2178C25.9037 44.0218 23.2578 45.1999 21.0293 46.6855C18.8009 48.1712 17.0333 49.935 15.8271 51.876C15.4446 52.4917 15.1201 53.1217 14.8564 53.7617C11.7928 49.2719 10 43.8456 10 38C10 22.536 22.536 10 38 10ZM38 13.999C31.3727 13.999 26.0002 19.3718 26 25.999C26 32.6264 31.3726 37.999 38 37.999C44.6274 37.999 50 32.6264 50 25.999C49.9998 19.3718 44.6273 13.9991 38 13.999Z"
-                        fill="black"
+                    {userAvatar ? (
+                      <img
+                        src={userAvatar}
+                        alt="Profile"
+                        style={{
+                          width: "35px",
+                          height: "35px",
+                          borderRadius: "50%",
+                          objectFit: "cover",
+                        }}
                       />
-                    </svg>
+                    ) : (
+                      <div
+                        style={{
+                          width: "35px",
+                          height: "35px",
+                          borderRadius: "50%",
+                          backgroundColor: "#ccc",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: "16px",
+                          fontWeight: "bold",
+                        }}
+                      >
+                        {userName.charAt(0).toUpperCase()}
+                      </div>
+                    )}
                   </button>
                   {showAccountDropdown && (
                     <div className="account-dropdown">

@@ -515,6 +515,10 @@ const fetchRecommendations = useCallback(async (videoId) => {
       e.preventDefault();
       if (!newComment.trim()) return;
 
+      if(!localStorage.getItem("accessToken")){
+        alert("Please login to comment");
+        return;
+      }
       try {
         const response = await fetch(
           `http://localhost:4000/api/v1/videos/${id}/comments`,
@@ -540,6 +544,10 @@ const fetchRecommendations = useCallback(async (videoId) => {
 
   const handleCommentLike = useCallback(
     async (commentId, isLiked) => {
+      if(!localStorage.getItem("accessToken")){
+        alert("Please login to like comments");
+        return;
+      }
       try {
         const response = await fetch(
           `http://localhost:4000/api/v1/comments/${commentId}/like`,
