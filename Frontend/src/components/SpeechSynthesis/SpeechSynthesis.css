@@ -1,0 +1,44 @@
+.speech-synthesis-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.mic-btn.listening {
+  border: 3px solid #ff0000;
+  box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+  animation: pulse 0.6s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(255, 0, 0, 0.8);
+  }
+  100% {
+    box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+  }
+}
+
+.interim-text {
+  position: absolute;
+  bottom: -30px;
+  left: 0;
+  background: #ff9900;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  white-space: nowrap;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  z-index: 1000;
+}
+
+[data-theme="dark"] .interim-text {
+  background: #ff9900;
+  color: #000;
+}

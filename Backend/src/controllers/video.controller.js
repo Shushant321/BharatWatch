@@ -9,6 +9,7 @@ import fs from "fs";
 import mongoose from "mongoose";
 import { uploadOnCloudinary } from "../utils/uploadoncloudinary.js";
 import { pipeline } from "stream";
+import { createNotification } from "./notification.controller.js";
 
 // Upload video
 const uploadVideo = asyncHandler(async (req, res) => {
@@ -239,6 +240,15 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
         Id: req.user._id,
       });
       await Video.findByIdAndUpdate(videoId, { $inc: { likes: 1 } });
+      
+      const liker = await User.findById(req.user._id);
+      await createNotification(
+        video.owner,
+        `${liker?.fullName || "Someone"} liked your video`,
+        `"${video.title}" received a like`,
+        "like"
+      );
+      
       return res
         .status(200)
         .json(

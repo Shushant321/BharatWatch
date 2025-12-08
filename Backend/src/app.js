@@ -4,7 +4,7 @@ import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import compression from "compression";
-
+import notificationRouter from "./routes/notification.routes.js"
 import errorHandler from "./middlewares/errors.middleware.js";
 import snipRoutes from "./routes/snips.routes.js";
 import userRouter from "./routes/user.routes.js";
@@ -92,6 +92,7 @@ app.use("/api/v1/users", userRouter);
 app.use("/api/v1/videos", videoRouter);
 app.use("/api/v1/comments", commentRouter);
 app.use("/api/v1/channels", channelRouter);
+app.use("/api/v1/notifications", notificationRouter);
 
 // ---------- Root ----------
 app.get("/", (req, res) => {
