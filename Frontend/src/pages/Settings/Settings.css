@@ -324,6 +324,16 @@
   color: #000;
 }
 
+[data-theme="dark"] .action-link.danger {
+  border-color: #ff4444;
+  color: #ff4444;
+}
+
+[data-theme="dark"] .action-link.danger:hover {
+  background: #ff4444;
+  color: #fff;
+}
+
 @media (max-width: 900px) {
   .settings-layout {
     flex-direction: column;

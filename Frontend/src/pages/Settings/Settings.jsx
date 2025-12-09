@@ -2,6 +2,91 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Settings.css";
 
+const WatchHistorySection = ({ userData }) => {
+  const [historyItems, setHistoryItems] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(true);
+
+  useEffect(() => {
+    fetchWatchHistory();
+  }, []);
+
+  const fetchWatchHistory = async () => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      const response = await fetch("http://localhost:4000/api/v1/watch-history", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const videos = data.data?.data || [];
+        setHistoryItems(videos.map(v => ({ 
+          _id: v.video._id, 
+          title: v.video.title, 
+          thumbnail: v.video.thumbnail 
+        })));
+      }
+    } catch (error) {
+      console.error("Failed to fetch history:", error);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  const clearHistory = async () => {
+    if (!window.confirm("Clear all watch history?")) return;
+    try {
+      const token = localStorage.getItem("accessToken");
+      await fetch("http://localhost:4000/api/v1/watch-history", {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setHistoryItems([]);
+    } catch (error) {
+      console.error("Failed to clear history:", error);
+    }
+  };
+
+  const removeItem = async (videoId) => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      await fetch(`http://localhost:4000/api/v1/watch-history/${videoId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setHistoryItems(historyItems.filter(i => i._id !== videoId));
+    } catch (error) {
+      console.error("Failed to remove item:", error);
+    }
+  };
+
+  return (
+    <div className="settings-section">
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+        <span>{historyItems.length} videos watched</span>
+        <button className="action-link danger" onClick={clearHistory}>Clear All</button>
+      </div>
+      {historyLoading ? (
+        <p>Loading...</p>
+      ) : historyItems.length === 0 ? (
+        <p style={{ color: "#999" }}>No watch history</p>
+      ) : (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "15px" }}>
+          {historyItems.map(item => (
+            <div key={item._id} style={{ background: "#f5f5f5", borderRadius: "8px", overflow: "hidden", position: "relative" }}>
+              <img src={item.thumbnail} alt={item.title} style={{ width: "100%", height: "120px", objectFit: "cover" }} />
+              <div style={{ padding: "10px" }}>
+                <p style={{ margin: "0 0 5px 0", fontSize: "13px", fontWeight: "500", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.title}</p>
+              </div>
+              <button onClick={() => removeItem(item._id)} style={{ position: "absolute", top: "5px", right: "5px", background: "rgba(0,0,0,0.7)", color: "#fff", border: "none", borderRadius: "50%", width: "24px", height: "24px", cursor: "pointer", fontSize: "14px" }}>✕</button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const Settings = () => {
   const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState("account");
@@ -124,6 +209,7 @@ const Settings = () => {
           <button className={activeSection === "profile" ? "active" : ""} onClick={() => setActiveSection("profile")}>Profile Photo</button>
           <button className={activeSection === "privacy" ? "active" : ""} onClick={() => setActiveSection("privacy")}>Privacy</button>
           <button className={activeSection === "notifications" ? "active" : ""} onClick={() => setActiveSection("notifications")}>Notifications</button>
+          <button className={activeSection === "Watch History" ? "active" : ""} onClick={() => setActiveSection("Watch History")}>Watch History</button>
         </div>
 
         <div className="settings-content">
@@ -186,6 +272,10 @@ const Settings = () => {
                 <input type="checkbox" defaultChecked />
               </div>
             </div>
+          )}
+
+          {activeSection === "Watch History" && (
+            <WatchHistorySection userData={userData} />
           )}
         </div>
       </div>

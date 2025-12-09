@@ -12,39 +12,41 @@ import { createNotification } from "./notification.controller.js";
 
 export const addComment = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
-  const { text, userId } = req.body;
+  const { text, userId, userName } = req.body;
 
   if (!text?.trim()) {
     throw new ApiError(400, "Comment text is required");
   }
 
   const testUserId = userId || new mongoose.Types.ObjectId();
+  const commenter = await User.findById(testUserId);
 
   const comment = await Comment.create({
     content: text,
     video: videoId,
     owner: testUserId,
+    userName: userName || commenter?.fullName || "Anonymous",
+    userAvatar: commenter?.avatar || "",
   });
 
   await Video.findByIdAndUpdate(videoId, { $inc: { commentsCount: 1 } });
 
   const video = await Video.findById(videoId);
-  const commenter = await User.findById(testUserId);
   await createNotification(
     video.owner,
-    `${commenter?.fullName || "Someone"} commented on your video`,
+    `${userName || commenter?.fullName || "Someone"} commented on your video`,
     `"${video.title}" has a new comment`,
     "comment"
   );
 
-  const populatedComment = await comment.populate("owner", "fullName");
-
   const transformed = {
-    id: populatedComment._id,
-    user: populatedComment.owner?.fullName || "Anonymous",
-    avatar: populatedComment.owner?.fullName?.charAt(0) || "A",
-    time: new Date(populatedComment.createdAt).toLocaleDateString(),
-    text: populatedComment.content,
+    id: comment._id,
+    user: comment.userName,
+    userId: comment.owner,
+    profile: comment.userAvatar,
+    avatar: comment.userName?.charAt(0) || "A",
+    time: new Date(comment.createdAt).toLocaleDateString(),
+    text: comment.content,
     likes: 0,
     replies: 0,
   };
@@ -55,14 +57,14 @@ export const addComment = asyncHandler(async (req, res) => {
 export const getComments = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
 
-  const comments = await Comment.find({ video: videoId })
-    .populate("owner", "fullName")
-    .sort({ createdAt: -1 });
+  const comments = await Comment.find({ video: videoId }).sort({ createdAt: -1 });
 
   const transformedComments = comments.map((comment) => ({
     id: comment._id,
-    user: comment.owner?.fullName || "Anonymous",
-    avatar: comment.owner?.fullName?.charAt(0) || "A",
+    user: comment.userName || "Anonymous",
+    userId: comment.owner,
+    profile: comment.userAvatar,
+    avatar: (comment.userName || "Anonymous")?.charAt(0) || "A",
     time: new Date(comment.createdAt).toLocaleDateString(),
     text: comment.content,
     likes: comment.likes || 0,
@@ -102,13 +104,14 @@ export const likeComment = asyncHandler(async (req, res) => {
 
 export const replyToComment = asyncHandler(async (req, res) => {
   const { commentId } = req.params;
-  const { message, userId } = req.body;
+  const { message, userId, userName } = req.body;
 
   if (!message?.trim()) {
     throw new ApiError(400, "Reply message is required");
   }
 
   const testUserId = userId || new mongoose.Types.ObjectId();
+  const replier = await User.findById(testUserId);
 
   const comment = await Comment.findById(commentId);
   if (!comment) {
@@ -120,22 +123,24 @@ export const replyToComment = asyncHandler(async (req, res) => {
     comment: commentId,
     video: comment.video,
     owner: testUserId,
+    userName: userName || replier?.fullName || "Anonymous",
+    userAvatar: replier?.avatar || "",
   });
 
   await Comment.findByIdAndUpdate(commentId, {
     $push: { replies: reply._id },
   });
 
-  const populatedReply = await reply.populate("owner", "fullName");
-
   res.status(201).json(
     new ApiResponse(201, {
-      id: populatedReply._id,
-      user: populatedReply.owner?.fullName || "Anonymous",
-      avatar: populatedReply.owner?.fullName?.charAt(0) || "U",
-      message: populatedReply.message,
+      id: reply._id,
+      user: reply.userName,
+      userId: reply.owner,
+      profile: reply.userAvatar,
+      avatar: reply.userName?.charAt(0) || "U",
+      message: reply.message,
       likes: 0,
-      time: new Date(populatedReply.createdAt).toLocaleDateString(),
+      time: new Date(reply.createdAt).toLocaleDateString(),
     }, "Reply added successfully")
   );
 });
@@ -143,14 +148,14 @@ export const replyToComment = asyncHandler(async (req, res) => {
 export const getReplies = asyncHandler(async (req, res) => {
   const { commentId } = req.params;
 
-  const replies = await CommentReply.find({ comment: commentId })
-    .populate("owner", "fullName")
-    .sort({ createdAt: -1 });
+  const replies = await CommentReply.find({ comment: commentId }).sort({ createdAt: -1 });
 
   const transformedReplies = replies.map((reply) => ({
     id: reply._id,
-    user: reply.owner?.fullName || "Anonymous",
-    avatar: reply.owner?.fullName?.charAt(0) || "U",
+    user: reply.userName || "Anonymous",
+    userId: reply.owner,
+    profile: reply.userAvatar,
+    avatar: (reply.userName || "Anonymous")?.charAt(0) || "U",
     message: reply.message,
     likes: reply.likes || 0,
     time: new Date(reply.createdAt).toLocaleDateString(),

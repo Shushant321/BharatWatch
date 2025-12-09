@@ -273,11 +273,12 @@ const RightPanelTabs = ({
                       comment.isPinned ? "pinned" : ""
                     }`}
                   >
-                    <div className="comment-avatar">{comment.avatar}</div>
+                    <img src={comment.profile || comment.avatar} alt={comment.user} className="comment-avatar" style={{width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover'}} />
                     <div className="comment-content">
                       <div className="comment-header">
                         <div className="comment-user-info">
                           <span className="comment-user">{comment.user}</span>
+                          <span style={{fontSize: '12px', color: '#666', marginLeft: '4px'}}>@{comment.userId || 'user'}</span>
                           {comment.isVerified && (
                             <span className="verified-badge">✓</span>
                           )}
@@ -370,15 +371,14 @@ const RightPanelTabs = ({
                           <div className="replies-list">
                             {replies[comment.id].map((reply) => (
                               <div key={reply.id} className="reply-item">
-                                <div className="reply-avatar">
-                                  {reply.avatar || "U"}
-                                </div>
+                                <img src={reply.profile || reply.avatar} alt={reply.user} className="reply-avatar" style={{width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover'}} />
                                 <div className="reply-content">
                                   <div className="reply-header">
                                     <div className="reply-user-info">
                                       <span className="reply-user">
                                         {reply.user}
                                       </span>
+                                      <span style={{fontSize: '11px', color: '#666', marginLeft: '4px'}}>@{reply.userId || 'user'}</span>
                                     </div>
                                     <span className="reply-time">
                                       {reply.time}

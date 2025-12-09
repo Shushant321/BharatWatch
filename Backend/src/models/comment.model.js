@@ -20,6 +20,14 @@ const commentSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    userName: {
+      type: String,
+      default: "Anonymous",
+    },
+    userAvatar: {
+      type: String,
+      default: "",
+    },
     replies: [
       {
         type: mongoose.Schema.Types.ObjectId,

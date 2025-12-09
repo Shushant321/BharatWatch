@@ -17,6 +17,14 @@ const commentReplySchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "User"
     },
+    userName:{
+        type: String,
+        default: "Anonymous"
+    },
+    userAvatar:{
+        type: String,
+        default: ""
+    },
     likes:{
         type: Number,
         default: 0

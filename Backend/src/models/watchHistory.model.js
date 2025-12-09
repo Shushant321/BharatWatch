@@ -6,26 +6,12 @@ const watchHistorySchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
-      index: true,
     },
-
     video: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Video",
       required: true,
-      index: true,
     },
-
-    watchDuration: {
-      type: Number, // seconds user watched
-      default: 0,
-    },
-
-    videoDuration: {
-      type: Number, // cached total duration
-      default: 0,
-    },
-
     watchedAt: {
       type: Date,
       default: Date.now,
@@ -33,3 +19,8 @@ const watchHistorySchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+watchHistorySchema.index({ user: 1, video: 1 }, { unique: true });
+watchHistorySchema.index({ user: 1, watchedAt: -1 });
+
+export const WatchHistory = mongoose.model("WatchHistory", watchHistorySchema);

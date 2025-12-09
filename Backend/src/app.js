@@ -10,8 +10,9 @@ import snipRoutes from "./routes/snips.routes.js";
 import userRouter from "./routes/user.routes.js";
 import videoRouter from "./routes/video.routes.js";
 import commentRouter from "./routes/comment.routes.js";
-import authRouter from "./routes/auth.routes.js"; // NEW
+import authRouter from "./routes/auth.routes.js";
 import channelRouter from "./routes/channel.routes.js";
+import watchHistoryRouter from "./routes/watchHistory.routes.js";
 
 const app = express();
 
@@ -86,13 +87,14 @@ app.get("/health", (req, res) => {
 });
 
 // ---------- API routes ----------
-app.use("/api/auth", authRouter);          // LOGIN / SIGNUP / REFRESH / LOGOUT
+app.use("/api/auth", authRouter);
 app.use("/api/snips", snipRoutes);
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/videos", videoRouter);
 app.use("/api/v1/comments", commentRouter);
 app.use("/api/v1/channels", channelRouter);
 app.use("/api/v1/notifications", notificationRouter);
+app.use("/api/v1/watch-history", watchHistoryRouter);
 
 // ---------- Root ----------
 app.get("/", (req, res) => {
